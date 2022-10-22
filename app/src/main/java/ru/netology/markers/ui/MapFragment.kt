@@ -18,7 +18,9 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
+import com.google.android.gms.location.CurrentLocationRequest
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 import com.google.android.material.snackbar.Snackbar
 import com.yandex.mapkit.MapKit
 import com.yandex.mapkit.MapKitFactory
@@ -54,21 +56,25 @@ class MapFragment : Fragment(R.layout.fragment_map) {
     }
 
     private val moveListener = object : MapObjectDragListener {
+
+        var lat: Double? = null
+        var long: Double? = null
+
         override fun onMapObjectDragStart(p0: MapObject) {
             Log.d("TAG", "onMapObjectDragStart: ")
         }
 
         override fun onMapObjectDrag(p0: MapObject, p1: Point) {
             Log.d("TAG", "onMapObjectDrag: ")
-            viewModel.updateCurrentMapObject(
-                p1.latitude,
-                p1.longitude,
-                (p0.userData as MarkerMetaData).title
-            )
+            lat = p1.latitude
+            long = p1.longitude
         }
 
         override fun onMapObjectDragEnd(p0: MapObject) {
             Log.d("TAG", "onMapObjectDragEnd: ")
+            viewModel.updateCurrentMapObject(
+                lat!!, long!!, (p0.userData as MarkerMetaData).title
+            )
         }
 
     }
@@ -198,7 +204,8 @@ class MapFragment : Fragment(R.layout.fragment_map) {
         ) {
             binding.myLocation.isVisible = true
             LocationServices.getFusedLocationProviderClient(requireContext())
-                .lastLocation.addOnSuccessListener { loc ->
+                .getCurrentLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, null)
+                .addOnSuccessListener { loc ->
                     callBack.callback(Point(loc.latitude, loc.longitude))
                 }
         } else requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
